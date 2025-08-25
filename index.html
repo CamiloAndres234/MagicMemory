@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memoria Mágica</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style id="app-style">
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #f0f7ff;
+      min-height: 100vh;
+    }
+
+    .title {
+      background: linear-gradient(45deg, #6366F1, #EC4899);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .card {
+      perspective: 1000px;
+      cursor: pointer;
+      aspect-ratio: 1;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 1rem;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #6366F1, #EC4899);
+      color: white;
+    }
+
+    .card-back {
+      background-color: white;
+      transform: rotateY(180deg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #9CA3AF, #6B7280);
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(156, 163, 175, 0.3);
+    }
+
+    /* Modal animation */
+    .modal {
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      transform: translateY(-20px);
+      transition: all 0.3s;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+
+    /* Difficulty selector style */
+    .difficulty-option {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .difficulty-option.active {
+      background-color: #6366F1;
+      color: white;
+    }
+
+    .theme-option {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .theme-option.active {
+      background-color: #6366F1;
+      color: white;
+    }
+
+    /* Confetti animation for the win screen */
+    @keyframes confetti-slow {
+      0% { transform: translate3d(0, 0, 0) rotateX(0) rotateY(0); }
+      100% { transform: translate3d(25px, 105vh, 0) rotateX(360deg) rotateY(180deg); }
+    }
+
+    @keyframes confetti-medium {
+      0% { transform: translate3d(0, 0, 0) rotateX(0) rotateY(0); }
+      100% { transform: translate3d(100px, 105vh, 0) rotateX(100deg) rotateY(360deg); }
+    }
+
+    @keyframes confetti-fast {
+      0% { transform: translate3d(0, 0, 0) rotateX(0) rotateY(0); }
+      100% { transform: translate3d(-50px, 105vh, 0) rotateX(10deg) rotateY(250deg); }
+    }
+
+    .confetti {
+      position: absolute;
+      z-index: 1;
+      top: -10px;
+      border-radius: 0%;
+    }
+
+    .confetti--animation-slow {
+      animation: confetti-slow 3.25s linear 1 forwards;
+    }
+
+    .confetti--animation-medium {
+      animation: confetti-medium 2.75s linear 1 forwards;
+    }
+
+    .confetti--animation-fast {
+      animation: confetti-fast 2.25s linear 1 forwards;
+    }
+  </style>
+</head>
+<body>
+  <!-- Start Screen -->
+  <div id="start-screen" class="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+    <h1 class="title text-5xl md:text-7xl mb-12 text-center">Memoria Mágica</h1>
+    <div class="space-y-4 w-full max-w-xs">
+      <button id="play-btn" class="btn-primary w-full py-4 px-6 rounded-xl text-white text-lg font-bold shadow-lg">
+        Jugar
+      </button>
+      <button id="instructions-btn" class="btn-secondary w-full py-4 px-6 rounded-xl text-white text-lg font-bold shadow-lg">
+        Instrucciones
+      </button>
+    </div>
+  </div>
+
+  <!-- Game Settings Screen -->
+  <div id="settings-screen" class="hidden flex flex-col items-center justify-center min-h-screen px-4 py-12">
+    <h2 class="title text-3xl md:text-4xl mb-8 text-center">Configuración del juego</h2>
+    
+    <div class="w-full max-w-md mb-8">
+      <h3 class="text-xl text-gray-700 mb-3">Dificultad:</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="difficulty-option active bg-white p-4 rounded-xl shadow text-center" data-size="4">
+          4x4 (16 cartas)
+        </div>
+        <div class="difficulty-option bg-white p-4 rounded-xl shadow text-center" data-size="6">
+          6x6 (36 cartas)
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full max-w-md mb-12">
+      <h3 class="text-xl text-gray-700 mb-3">Tema:</h3>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="theme-option active bg-white p-4 rounded-xl shadow text-center" data-theme="animals">
+          <div class="text-2xl mb-1">🐶</div>
+          Animales
+        </div>
+        <div class="theme-option bg-white p-4 rounded-xl shadow text-center" data-theme="planets">
+          <div class="text-2xl mb-1">🪐</div>
+          Planetas
+        </div>
+        <div class="theme-option bg-white p-4 rounded-xl shadow text-center" data-theme="flags">
+          <div class="text-2xl mb-1">🏁</div>
+          Banderas
+        </div>
+      </div>
+    </div>
+
+    <button id="start-game-btn" class="btn-primary w-full max-w-xs py-4 px-6 rounded-xl text-white text-lg font-bold shadow-lg">
+      Comenzar Juego
+    </button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="hidden min-h-screen px-4 py-6">
+    <div class="container mx-auto max-w-6xl">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="title text-2xl md:text-3xl">Memoria Mágica</h2>
+        <div class="flex space-x-4 text-gray-700 font-semibold">
+          <div id="timer" class="flex items-center">
+            <i class="fas fa-clock mr-2"></i>
+            <span id="seconds">0</span>s
+          </div>
+          <div id="attempts" class="flex items-center">
+            <i class="fas fa-sync mr-2"></i>
+            <span id="moves">0</span> intentos
+          </div>
+        </div>
+      </div>
+
+      <div id="game-board" class="grid grid-cols-4 gap-3 md:gap-4 mb-6">
+        <!-- Cards will be generated here -->
+      </div>
+
+      <button id="restart-btn" class="btn-secondary mx-auto block py-3 px-6 rounded-xl text-white font-bold shadow-lg">
+        <i class="fas fa-redo mr-2"></i> Reiniciar
+      </button>
+    </div>
+  </div>
+
+  <!-- Win Screen -->
+  <div id="win-screen" class="hidden fixed inset-0 flex items-center justify-center px-4 z-50">
+    <div class="absolute inset-0 bg-black bg-opacity-50" id="win-overlay"></div>
+    <div class="modal-content bg-white rounded-2xl p-8 max-w-md w-full relative z-10 text-center">
+      <div class="confetti-container"></div>
+      <h2 class="text-3xl font-bold text-gray-800 mb-4">¡Felicidades! 🎉</h2>
+      <p class="text-lg text-gray-600 mb-2">Encontraste todos los pares</p>
+      <p class="text-xl font-semibold mb-6">
+        <span id="final-moves">0</span> intentos en 
+        <span id="final-time">0</span> segundos
+      </p>
+      <div class="space-y-3">
+        <button id="play-again-btn" class="btn-primary w-full py-3 px-6 rounded-xl text-white font-bold shadow-lg">
+          Jugar de nuevo
+        </button>
+        <button id="back-to-start-btn" class="btn-secondary w-full py-3 px-6 rounded-xl text-white font-bold shadow-lg">
+          Volver al inicio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Modal -->
+  <div id="instructions-modal" class="modal fixed inset-0 flex items-center justify-center px-4 z-50">
+    <div class="absolute inset-0 bg-black bg-opacity-50" id="modal-overlay"></div>
+    <div class="modal-content bg-white rounded-2xl p-8 max-w-md w-full relative z-10">
+      <h3 class="text-2xl font-bold text-gray-800 mb-4">Instrucciones</h3>
+      <p class="text-lg text-gray-600 mb-6">
+        Voltea dos cartas y si son iguales se quedan destapadas. El objetivo es encontrar todos los pares en el menor tiempo posible.
+      </p>
+      <button id="close-instructions" class="btn-primary w-full py-3 px-6 rounded-xl text-white font-bold shadow-lg">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <script id="app-script">
+    document.addEventListener('DOMContentLoaded', function() {
+      // Game configuration
+      let gameConfig = {
+        boardSize: 4, // 4x4 by default
+        theme: 'animals',
+        moves: 0,
+        seconds: 0,
+        timer: null,
+        cards: [],
+        flippedCards: [],
+        matchedPairs: 0,
+        isProcessing: false,
+        totalPairs: 8, // Will be updated based on board size
+        gameStarted: false
+      };
+
+      // Card content based on themes
+      const themes = {
+        animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🦆'],
+        planets: ['🌍', '🌎', '🌏', '🪐', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '☀️', '⭐', '🌟', '✨', '💫', '🌈'],
+        flags: ['🏁', '🚩', '🎌', '🏴', '🏳️', '🇪🇸', '🇺🇸', '🇯🇵', '🇬🇧', '🇫🇷', '🇮🇹', '🇩🇪', '🇧🇷', '🇨🇦', '🇲🇽', '🇦🇷', '🇦🇺', '🇨🇳']
+      };
+
+      // DOM Elements
+      const startScreen = document.getElementById('start-screen');
+      const settingsScreen = document.getElementById('settings-screen');
+      const gameScreen = document.getElementById('game-screen');
+      const winScreen = document.getElementById('win-screen');
+      const instructionsModal = document.getElementById('instructions-modal');
+      const gameBoard = document.getElementById('game-board');
+      const movesDisplay = document.getElementById('moves');
+      const secondsDisplay = document.getElementById('seconds');
+      const finalMovesDisplay = document.getElementById('final-moves');
+      const finalTimeDisplay = document.getElementById('final-time');
+
+      // Buttons
+      const playBtn = document.getElementById('play-btn');
+      const instructionsBtn = document.getElementById('instructions-btn');
+      const closeInstructionsBtn = document.getElementById('close-instructions');
+      const startGameBtn = document.getElementById('start-game-btn');
+      const restartBtn = document.getElementById('restart-btn');
+      const playAgainBtn = document.getElementById('play-again-btn');
+      const backToStartBtn = document.getElementById('back-to-start-btn');
+      const modalOverlay = document.getElementById('modal-overlay');
+      const winOverlay = document.getElementById('win-overlay');
+
+      // Difficulty options
+      const difficultyOptions = document.querySelectorAll('.difficulty-option');
+      const themeOptions = document.querySelectorAll('.theme-option');
+
+      // Event Listeners
+      playBtn.addEventListener('click', showSettings);
+      instructionsBtn.addEventListener('click', showInstructions);
+      closeInstructionsBtn.addEventListener('click', hideInstructions);
+      modalOverlay.addEventListener('click', hideInstructions);
+      winOverlay.addEventListener('click', () => {}); // Prevent closing win modal on overlay click
+      
+      startGameBtn.addEventListener('click', startGame);
+      restartBtn.addEventListener('click', resetGame);
+      playAgainBtn.addEventListener('click', resetGame);
+      backToStartBtn.addEventListener('click', goToStart);
+
+      difficultyOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          difficultyOptions.forEach(opt => opt.classList.remove('active'));
+          option.classList.add('active');
+          gameConfig.boardSize = parseInt(option.dataset.size);
+          gameConfig.totalPairs = Math.pow(gameConfig.boardSize, 2) / 2;
+        });
+      });
+
+      themeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          themeOptions.forEach(opt => opt.classList.remove('active'));
+          option.classList.add('active');
+          gameConfig.theme = option.dataset.theme;
+        });
+      });
+
+      // Hide instructions modal initially
+      instructionsModal.classList.remove('active');
+
+      // Functions
+      function showSettings() {
+        startScreen.classList.add('hidden');
+        settingsScreen.classList.remove('hidden');
+      }
+
+      function showInstructions() {
+        instructionsModal.classList.add('active');
+      }
+
+      function hideInstructions() {
+        instructionsModal.classList.remove('active');
+      }
+
+      function startGame() {
+        settingsScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        
+        // Set up the game board based on selected difficulty
+        setupGameBoard();
+        
+        // Start the timer
+        startTimer();
+      }
+      
+      function setupGameBoard() {
+        gameBoard.innerHTML = '';
+        gameBoard.style.gridTemplateColumns = `repeat(${gameConfig.boardSize}, 1fr)`;
+        
+        const themeIcons = [...themes[gameConfig.theme]].slice(0, gameConfig.totalPairs);
+        
+        // Create pairs of cards
+        gameConfig.cards = [...themeIcons, ...themeIcons];
+        
+        // Shuffle the cards
+        shuffleArray(gameConfig.cards);
+        
+        // Create the cards in the DOM
+        gameConfig.cards.forEach((icon, index) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.dataset.index = index;
+          card.dataset.value = icon;
+          
+          card.innerHTML = `
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fas fa-question text-3xl"></i>
+              </div>
+              <div class="card-back">
+                ${icon}
+              </div>
+            </div>
+          `;
+          
+          card.addEventListener('click', () => flipCard(card));
+          gameBoard.appendChild(card);
+        });
+        
+        // Reset game state
+        gameConfig.moves = 0;
+        gameConfig.seconds = 0;
+        gameConfig.flippedCards = [];
+        gameConfig.matchedPairs = 0;
+        gameConfig.isProcessing = false;
+        
+        movesDisplay.textContent = gameConfig.moves;
+        secondsDisplay.textContent = gameConfig.seconds;
+      }
+      
+      function flipCard(card) {
+        // Prevent flipping if game is processing, card is already flipped or matched
+        if (
+          gameConfig.isProcessing || 
+          card.classList.contains('flipped') ||
+          gameConfig.flippedCards.length >= 2
+        ) {
+          return;
+        }
+        
+        // Mark game as started once the first card is flipped
+        if (!gameConfig.gameStarted) {
+          gameConfig.gameStarted = true;
+        }
+        
+        // Flip the card
+        card.classList.add('flipped');
+        gameConfig.flippedCards.push(card);
+        
+        // Check for a match if two cards are flipped
+        if (gameConfig.flippedCards.length === 2) {
+          gameConfig.moves++;
+          movesDisplay.textContent = gameConfig.moves;
+          
+          // Compare the two flipped cards
+          const [card1, card2] = gameConfig.flippedCards;
+          
+          if (card1.dataset.value === card2.dataset.value) {
+            // Match found
+            gameConfig.flippedCards = [];
+            gameConfig.matchedPairs++;
+            
+            // Check if the game is completed
+            if (gameConfig.matchedPairs === gameConfig.totalPairs) {
+              endGame();
+            }
+          } else {
+            // No match, flip cards back
+            gameConfig.isProcessing = true;
+            setTimeout(() => {
+              card1.classList.remove('flipped');
+              card2.classList.remove('flipped');
+              gameConfig.flippedCards = [];
+              gameConfig.isProcessing = false;
+            }, 1000);
+          }
+        }
+      }
+      
+      function startTimer() {
+        clearInterval(gameConfig.timer);
+        gameConfig.seconds = 0;
+        secondsDisplay.textContent = gameConfig.seconds;
+        
+        gameConfig.timer = setInterval(() => {
+          gameConfig.seconds++;
+          secondsDisplay.textContent = gameConfig.seconds;
+        }, 1000);
+      }
+      
+      function endGame() {
+        // Stop the timer
+        clearInterval(gameConfig.timer);
+        
+        // Update the win screen
+        finalMovesDisplay.textContent = gameConfig.moves;
+        finalTimeDisplay.textContent = gameConfig.seconds;
+        
+        // Show the win screen after a short delay
+        setTimeout(() => {
+          gameScreen.classList.add('hidden');
+          winScreen.classList.remove('hidden');
+          createConfetti();
+        }, 500);
+      }
+      
+      function resetGame() {
+        winScreen.classList.add('hidden');
+        setupGameBoard();
+        startTimer();
+        gameScreen.classList.remove('hidden');
+      }
+      
+      function goToStart() {
+        winScreen.classList.add('hidden');
+        gameScreen.classList.add('hidden');
+        settingsScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        clearInterval(gameConfig.timer);
+      }
+      
+      // Utility function to shuffle an array
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      // Create confetti animation for win screen
+      function createConfetti() {
+        const confettiContainer = document.querySelector('.confetti-container');
+        confettiContainer.innerHTML = '';
+        
+        const colors = ['#6366F1', '#EC4899', '#10B981', '#F59E0B', '#EF4444'];
+        const confettiCount = 100;
+        
+        for (let i = 0; i < confettiCount; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          const size = Math.random() * 10 + 5;
+          const animationClass = i % 3 === 0 
+            ? 'confetti--animation-slow'
+            : i % 3 === 1 
+              ? 'confetti--animation-medium' 
+              : 'confetti--animation-fast';
+          
+          confetti.style.left = Math.random() * 100 + '%';
+          confetti.style.width = `${size}px`;
+          confetti.style.height = `${size}px`;
+          confetti.style.backgroundColor = color;
+          confetti.classList.add(animationClass);
+          
+          confettiContainer.appendChild(confetti);
+        }
+      }
+
+      // Update grid template based on board size
+      function updateGridLayout() {
+        const gridClass = `grid-cols-${gameConfig.boardSize}`;
+        gameBoard.className = gameBoard.className.replace(/grid-cols-\d+/, gridClass);
+      }
+
+      // Call this when setting up the game board
+      function setupGameBoard() {
+        gameBoard.innerHTML = '';
+        updateGridLayout();
+        
+        // Create pairs of cards
+        gameConfig.cards = [...themes[gameConfig.theme], ...themes[gameConfig.theme]];
+        
+        // Shuffle the cards
+        shuffleArray(gameConfig.cards);
+        
+        // Create the cards in the DOM
+        gameConfig.cards.forEach((icon, index) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.dataset.index = index;
+          card.dataset.value = icon;
+          
+          card.innerHTML = `
+            <div class="card-inner">
+              <div class="card-front">
+                <i class="fas fa-question text-3xl"></i>
+              </div>
+              <div class="card-back">
+                ${icon}
+              </div>
+            </div>
+          `;
+          
+          card.addEventListener('click', () => flipCard(card));
+          gameBoard.appendChild(card);
+        });
+        
+        // Reset game state
+        gameConfig.moves = 0;
+        gameConfig.seconds = 0;
+        gameConfig.flippedCards = [];
+        gameConfig.matchedPairs = 0;
+        gameConfig.isProcessing = false;
+        
+        movesDisplay.textContent = gameConfig.moves;
+        secondsDisplay.textContent = gameConfig.seconds;
+      }
+      
+      // Make sure play-again-btn uses the same settings and theme
+      playAgainBtn.addEventListener('click', () => {
+        winScreen.classList.add('hidden');
+        setupGameBoard();
+        startTimer();
+        gameScreen.classList.remove('hidden');
+      });
+
+      // Ensure modals open and close correctly
+      function showWinScreen() {
+        winScreen.classList.remove('hidden');
+        createConfetti();
+      }
+    });
+  </script>
+</body>
+</html>
