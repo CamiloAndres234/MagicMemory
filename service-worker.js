@@ -1,40 +1,25 @@
-const CACHE_NAME = "memory-game-cache-v1";
+const CACHE_NAME = "magic-memory-v1";
 const urlsToCache = [
-  "./",           // la raíz
-  "./index.html", // tu único archivo con HTML+CSS+JS
-  "https://cdn-icons-png.flaticon.com/512/5265/5265574.png" // ícono
+  "/MagicMemory/",        // 👈 muy importante poner tu carpeta base
+  "/MagicMemory/index.html",
+  "/MagicMemory/style.css",
+  "/MagicMemory/script.js",
+  "/MagicMemory/icons/icon-192.png",
+  "/MagicMemory/icons/icon-512.png"
 ];
 
-// Instalación del Service Worker
-self.addEventListener("install", event => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
+    caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
     })
   );
 });
 
-// Activación y limpieza de cachés viejas
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-});
-
-// Interceptar peticiones
-self.addEventListener("fetch", event => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => {
+    caches.match(event.request).then((response) => {
       return response || fetch(event.request);
     })
   );
 });
-
