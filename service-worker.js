@@ -1,8 +1,7 @@
 const CACHE_NAME = "memory-game-cache-v1";
 const urlsToCache = [
-  "/",               // raíz
-  "/index.html",     // tu HTML principal
-  "/manifest.json",  // manifest
+  "./",           // la raíz
+  "./index.html", // tu único archivo con HTML+CSS+JS
   "https://cdn-icons-png.flaticon.com/512/5265/5265574.png" // ícono
 ];
 
@@ -15,7 +14,7 @@ self.addEventListener("install", event => {
   );
 });
 
-// Activación y limpieza de caché vieja
+// Activación y limpieza de cachés viejas
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -30,7 +29,7 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Interceptar peticiones y servir desde caché si no hay internet
+// Interceptar peticiones
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
@@ -38,3 +37,4 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
