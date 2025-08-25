@@ -1,0 +1,16 @@
+{
+  "name": "Memory Game",
+  "short_name": "MemGame",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a90e2",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5265/5265574.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
